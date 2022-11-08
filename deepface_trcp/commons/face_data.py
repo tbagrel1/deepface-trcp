@@ -65,7 +65,7 @@ class FacesData:
         self.rotated_img = rotated_img
         self.faces_data = faces_data
     def as_dict(self):
-        {
+        return {
             "score": float(self.global_score),
             "total_rotation": float(self.global_angle),
             "initial_rotation": float(self.original_global_angle),
