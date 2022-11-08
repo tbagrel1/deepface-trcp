@@ -159,6 +159,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			# TODO: debug
 			print("rotate {}: score = {:.2f}".format(angle, score))
 	(score, global_angle, rotated_img, faces_data) = max(global_scores, key=lambda x: x[0])
+	old_global_angle = global_angle
 	if fine_adjust_global_rotation and len(faces_data) > 0:
 		face_angles = []
 		for fd in faces_data:
