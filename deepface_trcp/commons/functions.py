@@ -145,7 +145,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 
 	detect_faces = backends.get(detector_backend)
 	faces_data = detect_faces(face_detector, img)
-	score = np.linalg.norm([fd["confidence"] for fd in faces_data])
+	score = np.linalg.norm([fd.confidence for fd in faces_data])
 	global_scores = [(score, 0, img, faces_data)]
 	# TODO: debug
 	print("rotate {}: score = {:.2f}".format(0, score))
@@ -154,7 +154,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			angle = i * 90
 			rotated_img = np.array(Image.fromarray(img).rotate(angle))
 			faces_data = detect_faces(face_detector, rotated_img)
-			score = np.linalg.norm([fd["confidence"] for fd in faces_data]) if len(faces_data) > 0 else 0
+			score = np.linalg.norm([fd.confidence for fd in faces_data]) if len(faces_data) > 0 else 0
 			global_scores.append((score, angle, rotated_img, faces_data))
 			# TODO: debug
 			print("rotate {}: score = {:.2f}".format(angle, score))
@@ -175,7 +175,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 		if not too_different:
 			rotated_img2 = np.array(Image.fromarray(img).rotate(avg_angle))
 			faces_data2 = detect_faces(face_detector, rotated_img2)
-			score2 = np.linalg.norm([fd["confidence"] for fd in faces_data2])
+			score2 = np.linalg.norm([fd.confidence for fd in faces_data2])
 			global_angle2 = global_angle + avg_angle
 			if score2 > score:
 				score, global_angle, rotated_img, faces_data, old_global_angle = score2, global_angle2, rotated_img2, faces_data2, global_angle
