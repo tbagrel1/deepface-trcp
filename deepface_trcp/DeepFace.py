@@ -104,7 +104,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 	facesdata = functions.detect_faces(img_path, detector_backend, align_individual_faces, try_all_global_rotations, fine_adjust_global_rotation)
 	pp_facesdata = facesdata # for the case with actions = []
 	copy_in_preprocess = ("emotion" in actions and len(actions) > 1) or force_copy
-	if "emotion" in action:
+	if "emotion" in actions:
 		emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
 		copy_in_preprocess = len(actions) > 1
 		pp_facesdata = functions.preprocess_face(facesdata, target_size = (48, 48), grayscale = True, copy = copy_in_preprocess)
