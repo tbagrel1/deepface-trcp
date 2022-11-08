@@ -42,10 +42,10 @@ def build_model(model_name):
 		# 'Dlib': DlibWrapper.loadModel,
 		# 'ArcFace': ArcFace.loadModel,
 		# 'SFace': SFace.load_model,
-		'Emotion': Emotion.loadModel,
-		'Age': Age.loadModel,
-		'Gender': Gender.loadModel,
-		'Race': Race.loadModel
+		'emotion': Emotion.loadModel,
+		'age': Age.loadModel,
+		'gender': Gender.loadModel,
+		'race': Race.loadModel
 	}
 
 	if not "model_obj" in globals():
@@ -88,16 +88,16 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 	#---------------------------------
 
 	if 'emotion' in actions:
-		models['emotion'] = build_model('Emotion')
+		models['emotion'] = build_model("emotion")
 
 	if 'age' in actions:
-		models['age'] = build_model('Age')
+		models['age'] = build_model("age")
 
 	if 'gender' in actions:
-		models['gender'] = build_model('Gender')
+		models['gender'] = build_model('gender')
 
 	if 'race' in actions:
-		models['race'] = build_model('Race')
+		models['race'] = build_model('race')
 
 	#---------------------------------
 

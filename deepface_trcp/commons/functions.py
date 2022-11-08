@@ -148,7 +148,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 	score = np.linalg.norm([fd["confidence"] for fd in faces_data])
 	global_scores = [(score, 0, img, faces_data)]
 	# TODO: debug
-	print("rotate {}: score = {:.2f}".format(angle, score))
+	print("rotate {}: score = {:.2f}".format(0, score))
 	if try_all_global_rotations:
 		for i in range(1, 3+1):
 			angle = i * 90
