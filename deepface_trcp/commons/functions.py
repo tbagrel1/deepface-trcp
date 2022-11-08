@@ -160,12 +160,12 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			print("rotate {}: score = {:.2f}".format(angle, score))
 	(score, global_angle, rotated_img, faces_data) = max(global_scores, key=lambda x: x[0])
 	old_global_angle = global_angle
+	face_angles = []
+	for fd in faces_data:
+		face_angle = get_face_angle(rotated_img, fd)
+		face_angles.append(face_angle)
+		fd.angle = face_angle
 	if fine_adjust_global_rotation and len(faces_data) > 0:
-		face_angles = []
-		for fd in faces_data:
-			face_angle = get_face_angle(rotated_img, fd)
-			face_angles.append(face_angle)
-			fd.angle = face_angle
 		avg_angle = np.mean(face_angles)
 		too_different = False
 		for ang1 in face_angles:
