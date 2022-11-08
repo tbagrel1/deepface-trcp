@@ -52,11 +52,11 @@ def detect_faces(face_detector, img):
             left_eye = landmarks["left_eye"]
             right_eye = landmarks["right_eye"]
             nose = landmarks["nose"]
-            mouse_left = landmarks["mouse_left"]
-            mouse_right = landmarks["mouse_right"]
+            mouth_left = landmarks["mouth_left"]
+            mouth_right = landmarks["mouth_right"]
 
             resp.append(FaceData(
-                detected_face, x, y, w, h, confidence, left_eye, right_eye, nose, mouse_left, mouse_right
+                detected_face, x, y, w, h, confidence, left_eye, right_eye, nose, mouth_left, mouth_right
             ))
 
     return resp
