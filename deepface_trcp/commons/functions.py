@@ -5,6 +5,7 @@ import cv2
 import base64
 from pathlib import Path
 from PIL import Image
+from PIL.Image import Resampling
 import requests
 from deepface_trcp.commons.face_data import FacesData
 
@@ -175,7 +176,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 					too_different = True
 		print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
 		if (not too_different) or fine_adjust_global_rotation == 'force':
-			rotated_img2 = np.array(Image.fromarray(img).rotate(avg_angle))
+			rotated_img2 = np.array(Image.fromarray(img).rotate(avg_angle, resample=Resampling.BILINEAR))
 			faces_data2 = detect_faces(face_detector, rotated_img2)
 			face_angles2 = [fd.angle for fd in faces_data2]
 			avg_angle2 = np.mean(face_angles2)
@@ -187,7 +188,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 				score, global_angle, rotated_img, faces_data, old_global_angle = score2, global_angle2, rotated_img2, faces_data2, global_angle
 	for fd in faces_data:
 		if align_individual_faces:
-			fd.al_sub_img = np.array(Image.fromarray(fd.sub_img).rotate(fd.angle))
+			fd.al_sub_img = np.array(Image.fromarray(fd.sub_img).rotate(fd.angle, resample=Resampling.BILINEAR))
 		else:
 			fd.al_sub_img = fd.sub_img
 	return FacesData(img, score, global_angle, old_global_angle, rotated_img, faces_data)
