@@ -128,7 +128,7 @@ def build_model(detector_backend):
 def compute_score(faces_data, avg_angle):
 	return max(0.01, np.linalg.norm([fd.confidence for fd in faces_data]) - (abs(avg_angle)/360)) if len(faces_data) > 0 else 0
 
-def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_all_global_rotations = True, fine_adjust_global_rotation = False):
+def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_all_global_rotations = True, fine_adjust_global_rotation = 'off'):
 	#img might be path, base64 or numpy array. Convert it to numpy whatever it is.
 	img = load_image(img)
 	#original_img = img.copy()
@@ -165,24 +165,24 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 	face_angles = [fd.angle for fd in faces_data]
 	avg_angle = np.mean(face_angles)
 	old_global_angle = global_angle
-	if fine_adjust_global_rotation and len(faces_data) > 0:
+	if (fine_adjust_global_rotation == 'safe' or fine_adjust_global_rotation == 'force') and len(faces_data) > 0:
 		too_different = False
 		for ang1 in face_angles:
 			for ang2 in face_angles:
 				if abs(ang2 - ang1) > MULTI_FACE_ANGLE_THRESHOLD:
 					too_different = True
 		print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
-		if not too_different:
+		if (not too_different) or fine_adjust_global_rotation == 'force':
 			rotated_img2 = np.array(Image.fromarray(img).rotate(avg_angle))
 			faces_data2 = detect_faces(face_detector, rotated_img2)
 			face_angles2 = [fd.angle for fd in faces_data2]
 			avg_angle2 = np.mean(face_angles2)
 			score2 = compute_score(faces_data2, avg_angle2)
 			global_angle2 = global_angle + avg_angle
-			if score2 > score:
-				score, global_angle, rotated_img, faces_data, old_global_angle = score2, global_angle2, rotated_img2, faces_data2, global_angle
-			else:
+			if (score2 < score):
 				print("score didn't improve: new {:.2f} vs old {:.2f}".format(score2, score))
+			if (score2 >= score) or fine_adjust_global_rotation == 'force':
+				score, global_angle, rotated_img, faces_data, old_global_angle = score2, global_angle2, rotated_img2, faces_data2, global_angle
 	for fd in faces_data:
 		if align_individual_faces:
 			fd.al_sub_img = np.array(Image.fromarray(fd.sub_img).rotate(fd.angle))

@@ -62,19 +62,28 @@ def build_model(model_name):
 
 	return model_obj[model_name]
 
-def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_backend = 'dlib', align_individual_faces = False, try_all_global_rotations = True, fine_adjust_global_rotation = False, force_copy = False):
+def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_backend = 'dlib', align_individual_faces = False, try_all_global_rotations = True, fine_adjust_global_rotation = 'off', force_copy = False):
 
 	"""
 	This function analyzes facial attributes including age, gender, emotion and race
 
 	Parameters:
-		img_path: exact image path, numpy array (BGR) or base64 encoded image could be passed. If you are going to analyze lots of images, then set this to list. e.g. img_path = ['img1.jpg', 'img2.jpg']
+		img_path: exact image path, numpy array (BGR) or base64 encoded image could be passed.
 
 		actions (tuple): The default is ('age', 'gender', 'emotion', 'race'). You can drop some of those attributes.
 
-		detector_backend (string): set face detector backend as retinaface, mtcnn, opencv, ssd or dlib.
+		detector_backend (string): set face detector backend in ('retinaface', 'mtcnn', 'dlib', 'mediapipe').
 
-		prog_bar (boolean): enable/disable a progress bar
+		align_individual_faces (boolean): should every face be aligned on its own before executing actions?
+
+		try_all_global_rotations (boolean): should all four rotations be tested to detect a maximum of faces?
+
+		fine_adjust_global_rotation (string):
+			'off': the global image will just be rotated by 1/4 of turns
+			'safe': the global image will get fine-grained rotated if it improves the face detection score
+			'force': the global image will be rotated to align a maximum of faces, even if it decreases the new detection score
+		
+		force_copy (boolean): should intermediate buffer copies be stored in the FaceData object for each detected faces? This is useful for debug only.
 	"""
 
 	actions = list(actions)
