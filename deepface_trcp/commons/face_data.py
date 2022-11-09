@@ -1,3 +1,8 @@
+import numpy as np
+
+def sort_asc_x(a, b): return (a, b) if a[0] <= b[0] else (b, a)
+def sort_asc_y(a, b): return (a, b) if a[1] <= b[1] else (b, a)
+
 class FaceData:
     def __init__(
         self,
@@ -20,8 +25,24 @@ class FaceData:
         self.h = h
         self.region = [x, y, w, h]
         self.confidence = confidence
-        self.left_eye = left_eye
-        self.right_eye = right_eye
+        mid_eye_point = (np.array(left_eye) + np.array(right_eye)) / 2
+        if nose[1] >= left_eye[1] and nose[1] >= right_eye[1]:
+            (self.left_eye, self.right_eye) = sort_asc_x(left_eye, right_eye)
+        elif nose[1] <= left_eye[1] and nose[1] <= right_eye[1]:
+            (self.right_eye, self.left_eye) = sort_asc_x(left_eye, right_eye)
+        elif nose[0] >= left_eye[0] and nose[0] >= right_eye[0]:
+            (self.right_eye, self.left_eye) = sort_asc_y(left_eye, right_eye)
+        elif nose[0] <= left_eye[0] and nose[0] <= right_eye[0]:
+            (self.left_eye, self.right_eye) = sort_asc_y(left_eye, right_eye)
+        elif nose[1] >= mid_eye_point[1]:
+            (self.left_eye, self.right_eye) = sort_asc_x(left_eye, right_eye)
+        elif nose[1] <= mid_eye_point[1]:
+            (self.right_eye, self.left_eye) = sort_asc_x(left_eye, right_eye)
+        elif nose[0] >= mid_eye_point[0]:
+            (self.right_eye, self.left_eye) = sort_asc_y(left_eye, right_eye)
+        else:
+            # nose[0] <= mid_eye_point[0]:
+            (self.left_eye, self.right_eye) = sort_asc_y(left_eye, right_eye)
         self.nose = nose
         self.mouth_left = mouth_left
         self.mouth_right = mouth_right
