@@ -128,7 +128,7 @@ def build_model(detector_backend):
 def compute_score(faces_data, avg_angle):
 	return max(0.01, np.linalg.norm([fd.confidence for fd in faces_data]) - (abs(avg_angle)/360)) if len(faces_data) > 0 else 0
 
-def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_all_global_rotations = True, fine_adjust_global_rotation = 'off'):
+def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off'):
 	#img might be path, base64 or numpy array. Convert it to numpy whatever it is.
 	img = load_image(img)
 	#original_img = img.copy()
@@ -150,8 +150,10 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 	global_scores = [(score, 0, img, faces_data)]
 	# TODO: debug
 	print("rotate {}: score = {:.2f}".format(0, score))
-	if try_all_global_rotations:
+	if try_global_rotations == 'eco' or try_global_rotations == 'all':
 		for i in range(1, 3+1):
+			if score > 0 and try_global_rotations == 'eco':
+				break
 			angle = i * 90
 			rotated_img = np.array(Image.fromarray(img).rotate(angle))
 			faces_data = detect_faces(face_detector, rotated_img)

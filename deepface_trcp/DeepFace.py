@@ -62,7 +62,7 @@ def build_model(model_name):
 
 	return model_obj[model_name]
 
-def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_backend = 'dlib', align_individual_faces = False, try_all_global_rotations = True, fine_adjust_global_rotation = 'off', force_copy = False):
+def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off', force_copy = False):
 
 	"""
 	This function analyzes facial attributes including age, gender, emotion and race
@@ -76,7 +76,10 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 
 		align_individual_faces (boolean): should every face be aligned on its own before executing actions?
 
-		try_all_global_rotations (boolean): should all four rotations be tested to detect a maximum of faces?
+		try_global_rotations (string):
+			'off': no rotation will be tried
+			'eco': the image will be rotated until at least one face if found
+			'full': all four rotations be tested to detect a maximum of faces?
 
 		fine_adjust_global_rotation (string):
 			'off': the global image will just be rotated by 1/4 of turns
@@ -110,7 +113,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 
 	#---------------------------------
 
-	facesdata = functions.detect_faces(img_path, detector_backend, align_individual_faces, try_all_global_rotations, fine_adjust_global_rotation)
+	facesdata = functions.detect_faces(img_path, detector_backend, align_individual_faces, try_global_rotations, fine_adjust_global_rotation)
 	pp_facesdata = facesdata # for the case with actions = []
 	copy_in_preprocess = ("emotion" in actions and len(actions) > 1) or force_copy
 	if "emotion" in actions:

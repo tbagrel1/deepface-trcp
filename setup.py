@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="deepface-trcp",
-    version="0.0.87",
+    version="0.0.88",
     author="Sefik Ilkin Serengil, Thomas Bagrel",
     author_email="serengil@gmail.com",
     description="A Lightweight Face Recognition and Facial Attribute Analysis Framework (Age, Gender, Emotion, Race) for Python",
