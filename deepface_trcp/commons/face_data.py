@@ -1,7 +1,53 @@
 import numpy as np
+from math import pi
 
 def sort_asc_x(a, b): return (a, b) if a[0] <= b[0] else (b, a)
 def sort_asc_y(a, b): return (a, b) if a[1] <= b[1] else (b, a)
+
+def get_face_angle(left_eye, right_eye):
+	# TODO: use nose?
+
+	#this function aligns given face in img based on left and right eye coordinates
+
+	left_eye_x, left_eye_y = left_eye
+	right_eye_x, right_eye_y = right_eye
+
+	#-----------------------
+	#find rotation direction
+
+	if left_eye_y > right_eye_y:
+		point_3rd = (right_eye_x, left_eye_y)
+		direction = -1 #rotate same direction to clock
+	else:
+		point_3rd = (left_eye_x, right_eye_y)
+		direction = 1 #rotate inverse direction of clock
+
+	#-----------------------
+	#find length of triangle edges
+
+	a = distance.findEuclideanDistance(np.array(left_eye), np.array(point_3rd))
+	b = distance.findEuclideanDistance(np.array(right_eye), np.array(point_3rd))
+	c = distance.findEuclideanDistance(np.array(right_eye), np.array(left_eye))
+
+	#-----------------------
+
+	#apply cosine rule
+
+	if b != 0 and c != 0: #this multiplication causes division by zero in cos_a calculation
+
+		cos_a = (b*b + c*c - a*a)/(2*b*c)
+		angle = np.arccos(cos_a) #angle in radian
+		angle = (angle * 180) / math.pi #radian to degree
+
+		#-----------------------
+		#rotate base image
+
+		if direction == -1:
+			angle = 90 - angle
+		final_angle = direction * angle
+	else:
+		final_angle = 0
+	return final_angle
 
 class FaceData:
     def __init__(
@@ -46,7 +92,7 @@ class FaceData:
         self.nose = nose
         self.mouth_left = mouth_left
         self.mouth_right = mouth_right
-        self.angle = None
+        self.angle = get_face_angle(self.left_eye, self.right_eye)
         self.al_sub_img = None
         self.pp_sub_img = None
         self.emotion = None

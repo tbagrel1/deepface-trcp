@@ -127,6 +127,9 @@ def build_model(detector_backend):
 
 	return face_detector_obj[detector_backend]
 
+def compute_score(faces_data, avg_angle):
+	return max(0.01, np.linalg.norm([fd.confidence for fd in faces_data]) - (abs(avg_angle)/360)) if len(faces_data) > 0 else 0
+
 def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_all_global_rotations = True, fine_adjust_global_rotation = False):
 	#img might be path, base64 or numpy array. Convert it to numpy whatever it is.
 	img = load_image(img)
@@ -154,19 +157,17 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			angle = i * 90
 			rotated_img = np.array(Image.fromarray(img).rotate(angle))
 			faces_data = detect_faces(face_detector, rotated_img)
-			score = np.linalg.norm([fd.confidence for fd in faces_data]) if len(faces_data) > 0 else 0
+			face_angles = [fd.angle for fd in faces_data]
+			avg_angle = np.mean(face_angles)
+			score = compute_score(faces_data, avg_angle)
 			global_scores.append((score, angle, rotated_img, faces_data))
 			# TODO: debug
 			print("rotate {}: score = {:.2f}".format(angle, score))
 	(score, global_angle, rotated_img, faces_data) = max(global_scores, key=lambda x: x[0])
+	face_angles = [fd.angle for fd in faces_data]
+	avg_angle = np.mean(face_angles)
 	old_global_angle = global_angle
-	face_angles = []
-	for fd in faces_data:
-		face_angle = get_face_angle(rotated_img, fd)
-		face_angles.append(face_angle)
-		fd.angle = face_angle
 	if fine_adjust_global_rotation and len(faces_data) > 0:
-		avg_angle = np.mean(face_angles)
 		too_different = False
 		for ang1 in face_angles:
 			for ang2 in face_angles:
@@ -176,14 +177,12 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 		if not too_different:
 			rotated_img2 = np.array(Image.fromarray(img).rotate(avg_angle))
 			faces_data2 = detect_faces(face_detector, rotated_img2)
-			score2 = np.linalg.norm([fd.confidence for fd in faces_data2])
+			face_angles2 = [fd.angle for fd in faces_data2]
+			avg_angle2 = np.mean(face_angles2)
+			score2 = compute_score(faces_data2, avg_angle2)
 			global_angle2 = global_angle + avg_angle
 			if score2 > score:
 				score, global_angle, rotated_img, faces_data, old_global_angle = score2, global_angle2, rotated_img2, faces_data2, global_angle
-				for fd in faces_data:
-					face_angle = get_face_angle(rotated_img, fd)
-					face_angles.append(face_angle)
-					fd.angle = face_angle
 			else:
 				print("score didn't improve: new {:.2f} vs old {:.2f}".format(score2, score))
 	for fd in faces_data:
@@ -192,51 +191,6 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 		else:
 			fd.al_sub_img = fd.sub_img
 	return FacesData(img, score, global_angle, old_global_angle, rotated_img, faces_data)
-
-def get_face_angle(img, fd):
-	# TODO: use nose?
-
-	#this function aligns given face in img based on left and right eye coordinates
-
-	left_eye_x, left_eye_y = fd.left_eye
-	right_eye_x, right_eye_y = fd.right_eye
-
-	#-----------------------
-	#find rotation direction
-
-	if left_eye_y > right_eye_y:
-		point_3rd = (right_eye_x, left_eye_y)
-		direction = -1 #rotate same direction to clock
-	else:
-		point_3rd = (left_eye_x, right_eye_y)
-		direction = 1 #rotate inverse direction of clock
-
-	#-----------------------
-	#find length of triangle edges
-
-	a = distance.findEuclideanDistance(np.array(fd.left_eye), np.array(point_3rd))
-	b = distance.findEuclideanDistance(np.array(fd.right_eye), np.array(point_3rd))
-	c = distance.findEuclideanDistance(np.array(fd.right_eye), np.array(fd.left_eye))
-
-	#-----------------------
-
-	#apply cosine rule
-
-	if b != 0 and c != 0: #this multiplication causes division by zero in cos_a calculation
-
-		cos_a = (b*b + c*c - a*a)/(2*b*c)
-		angle = np.arccos(cos_a) #angle in radian
-		angle = (angle * 180) / math.pi #radian to degree
-
-		#-----------------------
-		#rotate base image
-
-		if direction == -1:
-			angle = 90 - angle
-		final_angle = direction * angle
-	else:
-		final_angle = 0
-	return final_angle
 
 		# img = Image.fromarray(img)
 		# img = np.array(img.rotate())
