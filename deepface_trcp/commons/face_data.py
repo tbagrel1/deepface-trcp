@@ -1,6 +1,11 @@
 import numpy as np
 import math
 from deepface_trcp.commons import distance
+from PIL import Image
+from PIL.Image import Resampling
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from deepface_trcp.commons.functions import load_image
 
 def sort_asc_x(a, b): return (a, b) if a[0] <= b[0] else (b, a)
 def sort_asc_y(a, b): return (a, b) if a[1] <= b[1] else (b, a)
@@ -140,3 +145,21 @@ class FacesData:
             "fine_grained_rotation": float(self.global_angle - self.original_global_angle),
             "faces": [fd.as_dict() for fd in self.faces_data]
         }
+    def draw(self):
+        # Create figure and axes
+        fig, ax = plt.subplots()
+        rotated_image = np.array(Image.fromarray(self.original_image).rotate(self.original_global_angle))
+        rotated_image2 = np.array(Image.fromarray(rotated_image).rotate(self.global_angle - self.original_global_angle, resample=Resampling.BILINEAR))
+        # Display the image
+        ax.imshow(rotated_image2)
+        for fd in self.faces_data:
+            rect = patches.Rectangle((fd.x, fd.y), fd.w, fd.h, linewidth=1, edgecolor='r', facecolor='none')
+            left_eye = patches.Circle(fd.left_eye, 2, linewidth=1, edgecolor='g', facecolor='none')
+            right_eye = patches.Circle(fd.right_eye, 2, linewidth=1, edgecolor='b', facecolor='none')
+            nose = patches.Circle(fd.nose, 2, linewidth=1, edgecolor='y', facecolor='none')
+            # Add the patch to the Axes
+            ax.add_patch(rect)
+            ax.add_patch(left_eye)
+            ax.add_patch(right_eye)
+            ax.add_patch(nose)
+        plt.show()
