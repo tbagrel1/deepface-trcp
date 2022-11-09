@@ -10,9 +10,7 @@ from deepface_trcp.commons.face_data import FacesData
 
 from deepface_trcp.detectors import DlibWrapper, MtcnnWrapper, RetinaFaceWrapper,MediapipeWrapper
 from PIL import Image
-import math
 import numpy as np
-from deepface_trcp.commons import distance
 
 # angle in degrees that two faces in the same picture should not exceed inbetween them for the fine ajust rotation to happen 
 MULTI_FACE_ANGLE_THRESHOLD = 120
