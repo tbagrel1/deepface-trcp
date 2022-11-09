@@ -5,7 +5,6 @@ from PIL import Image
 from PIL.Image import Resampling
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from deepface_trcp.commons.functions import load_image
 
 def sort_asc_x(a, b): return (a, b) if a[0] <= b[0] else (b, a)
 def sort_asc_y(a, b): return (a, b) if a[1] <= b[1] else (b, a)
