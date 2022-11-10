@@ -31,10 +31,11 @@ def load_external_model():
 	from age_gender_estimation_trcp.factory import get_model
 	weights_file = get_file(EXTERNAL_WEIGHTS_FILE_NAME, EXTERNAL_WEIGHTS_URL, file_hash=EXTERNAL_WEIGHTS_HASH)
 	model_name, EXTERNAL_MODEL_SIZE = Path(weights_file).stem.split("_")[:2]
-	EXTERNAL_MODEL_SIZE = int(model_size)
+	EXTERNAL_MODEL_SIZE = int(EXTERNAL_MODEL_SIZE)
 	config = OmegaConf.from_dotlist([f"model.model_name={model_name}", f"model.img_size={EXTERNAL_MODEL_SIZE}"])
 	model = get_model(config)
 	model.load_weights(weights_file)
+	return model
 
 def build_model(model_name):
 
