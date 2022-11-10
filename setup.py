@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as req_file:
 
 setuptools.setup(
     name="deepface-trcp",
-    version="0.0.103",
+    version="0.0.104",
     author="Sefik Ilkin Serengil, Thomas Bagrel",
     author_email="serengil@gmail.com",
     description="A Lightweight Face Recognition and Facial Attribute Analysis Framework (Age, Gender, Emotion, Race) for Python",
@@ -22,6 +22,6 @@ setuptools.setup(
         "Operating System :: OS Independent"
     ],
     python_requires='>=3.5.5',
-    install_requires=reqs + ["agegenderestimation"],
-    dependency_links=["https://github.com/tbagrel1/age-gender-estimation/tarball/master#egg=agegenderestimation-0.6"]
+    install_requires=reqs + ["age-gender-estimation-trcp"],
+    dependency_links=["https://github.com/tbagrel1/age-gender-estimation-trcp/tarball/master#egg=age-gender-estimation-trcp-0.6"]
 )
