@@ -61,7 +61,6 @@ class FaceData:
         self.age = None
         self.gender = None
         self.race = None
-        self.external = None
     def as_dict(self):
         mouth_left = {"x": int(self.mouth_left[0]), "y": int(self.mouth_left[1])} if self.mouth_left is not None else None
         mouth_right = {"x": int(self.mouth_right[0]), "y": int(self.mouth_right[1])} if self.mouth_right is not None else None
@@ -83,8 +82,7 @@ class FaceData:
             "emotion": self.emotion,
             "age": self.age,
             "gender": self.gender,
-            "race": self.race,
-            "external": self.external
+            "race": self.race
         }
 
 class FacesData:

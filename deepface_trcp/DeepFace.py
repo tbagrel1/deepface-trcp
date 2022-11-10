@@ -165,15 +165,14 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 			if "age" in actions:
 				age_predictions = models['age'].predict(fd.pp_sub_img, verbose=0)[0,:]
 				apparent_age = Age.findApparentAge(age_predictions)
-				fd.age = float(apparent_age)
+				if fd.age is None:
+					fd.age = {}
+				fd.age["deepface"] = float(apparent_age)
 			if "gender" in actions:
 				gender_predictions = models['gender'].predict(fd.pp_sub_img, verbose=0)[0,:]
-				resp_obj = {}
-				for i, gender_label in enumerate(gender_labels):
-					gender_prediction = 100 * gender_predictions[i]
-					resp_obj[gender_label] = float(gender_prediction)
-				resp_obj["dominant_gender"] = gender_labels[np.argmax(gender_predictions)]
-				fd.gender = resp_obj
+				if fd.gender is None:
+					fd.gender = {}
+				fd.gender["deepface"] = float(gender_predictions[0])
 			if "race" in actions:
 				race_predictions = models['race'].predict(fd.pp_sub_img, verbose=0)[0,:]
 				sum_of_predictions = race_predictions.sum()
@@ -184,7 +183,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 					resp_obj[race_label] = float(race_prediction)
 				resp_obj["dominant_race"] = race_labels[np.argmax(race_predictions)]
 				fd.race = resp_obj
-	if "external_age_gender" in actions:
+	if "external_age_gender" in actions and len(pp_facesdata.faces_data) > 0:
 		face_frames = np.empty((len(pp_facesdata.faces_data), EXTERNAL_MODEL_SIZE, EXTERNAL_MODEL_SIZE, 3))
 		for i, fd in enumerate(pp_facesdata.faces_data):
 			if force_copy:
@@ -198,13 +197,34 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 		predicted_genders = results[0]
 		predicted_ages = results[1].dot(np.arange(0, 101).reshape(101, 1)).flatten()
 		for fd, predicted_gender, predicted_age in zip(pp_facesdata.faces_data, predicted_genders, predicted_ages):
-			fd.external = {
-				"age": float(predicted_age),
-				"gender_value": float(predicted_gender[0]),
-				"dominant_gender": "male" if predicted_gender[0] < 0.5 else "female"
-			}
+			if fd.age is None:
+				fd.age = {}
+			fd.age["external"] = float(predicted_age)
+			if fd.gender is None:
+				fd.gender = {}
+			fd.gender["external"] = float(gender_predictions[0])
 		
 	#---------------------------------
+	for fd in pp_facesdata.faces_data:
+		if "external_age_gender" in actions and "age" in actions:
+			fd.age["dominant_age"] = np.mean([fd.age["deepface"], fd.age["external"]])
+		elif "external_age_gender" in actions:
+			fd.age["dominant_age"] = fd.age["external"]
+		elif "age" in actions:
+			fd.age["dominant_age"] = fd.age["deepface"]
+		
+		if "external_age_gender" in actions and "gender" in actions:
+			if fd.gender["deepface"] < 0.5 and fd.gender["external"] < 0.5:
+				fd.gender["dominant_gender"] = "male"
+			elif fd.gender["deepface"] >= 0.5 and fd.gender["external"] >= 0.5:
+				fd.gender["dominant_gender"] = "female"
+			else:
+				fd.gender["dominant_gender"] = "unknown"
+		elif "external_age_gender" in actions:
+			fd.gender["dominant_gender"] = "male" if fd.gender["external"] < 0.5 else "female"
+		elif "gender" in actions:
+			fd.gender["dominant_gender"] = "male" if fd.gender["deepface"] < 0.5 else "female"
+
 	return pp_facesdata
 
 
