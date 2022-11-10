@@ -62,7 +62,7 @@ def build_model(model_name):
 
 	return model_obj[model_name]
 
-def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off', force_copy = False):
+def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off', crop_margin_ratio = 0.2, force_copy = False):
 
 	"""
 	This function analyzes facial attributes including age, gender, emotion and race
@@ -85,6 +85,8 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 			'off': the global image will just be rotated by 1/4 of turns
 			'safe': the global image will get fine-grained rotated if it improves the face detection score
 			'force': the global image will be rotated to align a maximum of faces, even if it decreases the new detection score
+		
+		crop_margin_ratio (float): value in [-1..1] corresponding to the added or reduced margin around each face box
 		
 		force_copy (boolean): should intermediate buffer copies be stored in the FaceData object for each detected faces? This is useful for debug only.
 	"""
@@ -113,7 +115,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 
 	#---------------------------------
 
-	facesdata = functions.detect_faces(img_path, detector_backend, align_individual_faces, try_global_rotations, fine_adjust_global_rotation)
+	facesdata = functions.detect_faces(img_path, detector_backend, align_individual_faces, try_global_rotations, fine_adjust_global_rotation, crop_margin_ratio)
 	pp_facesdata = facesdata # for the case with actions = []
 	copy_in_preprocess = ("emotion" in actions and len(actions) > 1) or force_copy
 	if "emotion" in actions:

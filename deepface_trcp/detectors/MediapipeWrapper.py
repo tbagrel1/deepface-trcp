@@ -9,7 +9,7 @@ def build_model():
     face_detection =  mp_face_detection.FaceDetection( min_detection_confidence=0.7)
     return face_detection
 
-def detect_faces(face_detector, img):
+def detect_faces(face_detector, img, crop_margin_ratio):
     import mediapipe as mp #this is not a must dependency. do not import it in the global level.
     resp = []
     
@@ -27,8 +27,17 @@ def detect_faces(face_detector, img):
             
             x = int(bounding_box.xmin * img_width)
             w = int(bounding_box.width * img_width)
+            x2 = x + w
             y = int(bounding_box.ymin * img_height)
             h = int(bounding_box.height * img_height)
+            y2 = y + h
+            crop_margin = round(max(w, h) * crop_margin_ratio)
+            x = max(0, x - crop_margin)
+            x2 = min(x2 + crop_margin, img_width)
+            w = x2 - x
+            y = max(0, y - crop_margin)
+            y2 = min(y2 + crop_margin, img_height)
+            h = y2 - y
             
             right_eye = (int(landmarks[0].x * img_width), int(landmarks[0].y * img_height))
             left_eye = (int(landmarks[1].x * img_width), int(landmarks[1].y * img_height))
@@ -38,7 +47,7 @@ def detect_faces(face_detector, img):
             #left_ear = (int(landmarks[5].x * img_width), int(landmarks[5].y * img_height))
             
             if x > 0 and y > 0:
-                detected_face = img[y:y+h, x:x+w]
+                detected_face = img[y:y2, x:x2]
                 resp.append(FaceData(detected_face, x, y, w, h, confidence, left_eye, right_eye, nose, mouth, mouth))
                 
     return resp

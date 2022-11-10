@@ -56,8 +56,7 @@ def dlib_shape_to_np_array(shape):
 
     return arr
 
-def detect_faces(detector, img):
-
+def detect_faces(detector, img, crop_margin_ratio):
 	import dlib #this requirement is not a must that's why imported here
 
 	resp = []
@@ -76,10 +75,11 @@ def detect_faces(detector, img):
 	for idx, d in enumerate(detections):
 		left = d.left(); right = d.right()
 		top = d.top(); bottom = d.bottom()
-		x = max(0, left)
-		x2 = min(right, img.shape[1])
-		y = max(0, top)
-		y2 = min(bottom, img.shape[0])
+		crop_margin = round(max(right - left, bottom - top) * crop_margin_ratio)
+		x = max(0, left - crop_margin)
+		x2 = min(right + crop_margin, img.shape[1])
+		y = max(0, top - crop_margin)
+		y2 = min(bottom + crop_margin, img.shape[0])
 		w = x2 - x
 		h = y2 - y
 		detected_face = img[y: y2, x: x2]

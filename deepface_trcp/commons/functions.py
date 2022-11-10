@@ -140,7 +140,7 @@ def angle_difference(ang1, ang2):
 		raw_diff -= 360
 	return raw_diff
 
-def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off'):
+def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off', crop_margin_ratio = 0.2):
 	#img might be path, base64 or numpy array. Convert it to numpy whatever it is.
 	img = load_image(img)
 	#original_img = img.copy()
@@ -157,7 +157,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 	}
 
 	detect_faces = backends.get(detector_backend)
-	faces_data = detect_faces(face_detector, img)
+	faces_data = detect_faces(face_detector, img, crop_margin_ratio)
 	score = np.linalg.norm([fd.confidence for fd in faces_data])
 	global_scores = [(score, 0, img, faces_data)]
 	# TODO: debug
