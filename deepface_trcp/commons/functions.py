@@ -127,7 +127,12 @@ def build_model(detector_backend):
 	return face_detector_obj[detector_backend]
 
 def compute_score(faces_data, avg_angle):
-	return max(0.01, np.linalg.norm([fd.confidence for fd in faces_data]) - (abs(avg_angle)/360)) if len(faces_data) > 0 else 0
+	if len(faces_data) == 0:
+		return 0
+	s = np.linalg.norm([fd.confidence for fd in faces_data])
+	if s == 0:
+		return 0
+	return (1 - 0.9*(abs(avg_angle)/180)) * s
 
 def angle_mean(angles):
 	return np.rad2deg(np.arctan2(sum(np.sin(np.deg2rad(a)) for a in angles), sum(np.cos(np.deg2rad(a)) for a in angles)))
