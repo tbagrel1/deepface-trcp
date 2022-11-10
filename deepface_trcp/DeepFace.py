@@ -183,7 +183,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 				fd.race = resp_obj
 	if "external_age_gender" in actions:
 		face_frames = np.empty((len(pp_facesdata.faces_data), EXTERNAL_MODEL_SIZE, EXTERNAL_MODEL_SIZE, 3))
-		for i, fd in pp_facesdata.faces_data:
+		for i, fd in enumerate(pp_facesdata.faces_data):
 			if force_copy:
 				bgr_image = fd.al_sub_img.copy()
 			else:
