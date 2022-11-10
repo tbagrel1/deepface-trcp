@@ -133,6 +133,9 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 
 	if 'race' in actions:
 		models['race'] = build_model('race')
+	
+	if 'external_age_gender' in actions:
+		models['external_age_gender'] = build_model('external_age_gender')
 
 	#---------------------------------
 
