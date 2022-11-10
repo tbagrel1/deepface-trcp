@@ -176,7 +176,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 					too_different = True
 		print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
 		if (not too_different) or fine_adjust_global_rotation == 'force':
-			rotated_img2 = np.array(Image.fromarray(img).rotate(avg_angle, resample=Resampling.BILINEAR))
+			rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(avg_angle, resample=Resampling.BILINEAR))
 			faces_data2 = detect_faces(face_detector, rotated_img2)
 			face_angles2 = [fd.angle for fd in faces_data2]
 			avg_angle2 = np.mean(face_angles2)
