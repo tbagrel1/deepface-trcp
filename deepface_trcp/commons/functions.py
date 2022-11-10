@@ -199,7 +199,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			face_angles2 = [fd.angle for fd in faces_data2]
 			avg_angle2 = angle_mean(face_angles2)
 			score2 = compute_score(faces_data2, avg_angle2)
-			global_angle2 = global_angle + avg_angle
+			global_angle2 = global_angle + rot_angle
 			if (score2 < score):
 				print("score didn't improve: new {:.2f} vs old {:.2f}".format(score2, score))
 			if (score2 >= score) or fine_adjust_global_rotation == 'force':
