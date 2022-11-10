@@ -200,7 +200,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 		for fd, predicted_gender, predicted_age in zip(pp_facesdata.faces_data, predicted_genders, predicted_ages):
 			fd.external = {
 				"age": float(predicted_age),
-				"gender_value": float(predicted_gender),
+				"gender_value": float(predicted_gender[0]),
 				"dominant_gender": "male" if predicted_gender[0] < 0.5 else "female"
 			}
 		
