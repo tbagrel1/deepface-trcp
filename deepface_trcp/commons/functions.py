@@ -129,6 +129,17 @@ def build_model(detector_backend):
 def compute_score(faces_data, avg_angle):
 	return max(0.01, np.linalg.norm([fd.confidence for fd in faces_data]) - (abs(avg_angle)/360)) if len(faces_data) > 0 else 0
 
+def angle_mean(angles):
+	return np.rad2deg(np.arctan2(sum(np.sin(np.deg2rad(a)) for a in angles), sum(np.cos(np.deg2rad(a)) for a in angles)))
+
+def angle_difference(ang1, ang2):
+	raw_diff = ang2 - ang1
+	while raw_diff <= -180:
+		raw_diff += 360
+	while raw_diff > 180:
+		raw_diff -= 360
+	return raw_diff
+
 def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off'):
 	#img might be path, base64 or numpy array. Convert it to numpy whatever it is.
 	img = load_image(img)
@@ -152,34 +163,35 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 	# TODO: debug
 	print("rotate {}: score = {:.2f}".format(0, score))
 	if try_global_rotations == 'eco' or try_global_rotations == 'all':
-		for i in range(1, 3+1):
+		# try 180° first
+		for i in [2, 1, 3]:
 			if score > 0 and try_global_rotations == 'eco':
 				break
 			angle = i * 90
 			rotated_img = np.array(Image.fromarray(img).rotate(angle))
 			faces_data = detect_faces(face_detector, rotated_img)
 			face_angles = [fd.angle for fd in faces_data]
-			avg_angle = np.mean(face_angles)
+			avg_angle = angle_mean(face_angles)
 			score = compute_score(faces_data, avg_angle)
 			global_scores.append((score, angle, rotated_img, faces_data))
 			# TODO: debug
 			print("rotate {}: score = {:.2f}".format(angle, score))
 	(score, global_angle, rotated_img, faces_data) = max(global_scores, key=lambda x: x[0])
 	face_angles = [fd.angle for fd in faces_data]
-	avg_angle = np.mean(face_angles)
+	avg_angle = angle_mean(face_angles)
 	old_global_angle = global_angle
 	if (fine_adjust_global_rotation == 'safe' or fine_adjust_global_rotation == 'force') and len(faces_data) > 0:
 		too_different = False
 		for ang1 in face_angles:
 			for ang2 in face_angles:
-				if abs(ang2 - ang1) > MULTI_FACE_ANGLE_THRESHOLD:
+				if abs(angle_difference(ang1, ang2)) > MULTI_FACE_ANGLE_THRESHOLD:
 					too_different = True
 		print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
 		if (not too_different) or fine_adjust_global_rotation == 'force':
 			rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(avg_angle, resample=Resampling.BILINEAR))
 			faces_data2 = detect_faces(face_detector, rotated_img2)
 			face_angles2 = [fd.angle for fd in faces_data2]
-			avg_angle2 = np.mean(face_angles2)
+			avg_angle2 = angle_mean(face_angles2)
 			score2 = compute_score(faces_data2, avg_angle2)
 			global_angle2 = global_angle + avg_angle
 			if (score2 < score):
