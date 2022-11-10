@@ -83,7 +83,7 @@ def build_model(model_name):
 
 	return model_obj[model_name]
 
-def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_age_gender'), detector_backends = (('dlib', 0.1), ('retinaface', 0.1)), align_individual_faces = False, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', force_copy = False):
+def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_age_gender'), detector_backends = (('dlib', 0.25), ('retinaface', 0.25)), align_individual_faces = False, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', force_copy = False):
 
 	"""
 	This function analyzes facial attributes including age, gender, emotion and race

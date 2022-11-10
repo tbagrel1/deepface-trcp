@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as req_file:
 
 setuptools.setup(
     name="deepface-trcp",
-    version="0.0.119",
+    version="0.0.120",
     author="Sefik Ilkin Serengil, Thomas Bagrel",
     author_email="serengil@gmail.com",
     description="A Lightweight Face Recognition and Facial Attribute Analysis Framework (Age, Gender, Emotion, Race) for Python",
