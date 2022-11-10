@@ -5,7 +5,6 @@ import os
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from os import path
 import numpy as np
 import cv2
 from deepface_trcp.extendedmodels import Age, Gender, Race, Emotion
@@ -83,7 +82,7 @@ def build_model(model_name):
 
 	return model_obj[model_name]
 
-def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_age_gender'), detector_backends = (('dlib', 0.25), ('retinaface', 0.25)), align_individual_faces = False, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', force_copy = False):
+def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_age_gender'), detector_backends = (('dlib', 0.11), ('retinaface', 0.07)), align_individual_faces = True, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', force_copy = False):
 
 	"""
 	This function analyzes facial attributes including age, gender, emotion and race
@@ -93,19 +92,20 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 
 		actions (tuple): The default is ('age', 'gender', 'emotion', 'race', 'external_age_gender'). You can drop some of those attributes.
 
-		detector_backends (list of tuples): list of (backend, crop_margin_ratio) that should be tried in order until a face is found. backend in a value in ['retinaface', 'mtcnn', 'dlib', 'mediapipe'] and crop_margin_ratio is a value in [-1..1] corresponding to the added or reduced margin around each face box.
+		detector_backends (list of tuples): list of (backend, crop_margin_ratio) that should be tried in order until a face is found. backend in a value in ['retinaface', 'mtcnn', 'dlib'] and crop_margin_ratio is a value in [-1..1] corresponding to the added or reduced margin around each face box.
+		Crop margin ratio recommanded values are ["dlib" -> 0.11), "mtcnn" -> 0.08, "retinaface" -> 0.07]
 
 		align_individual_faces (boolean): should every face be aligned on its own before executing actions?
 
 		try_global_rotations (string):
-			'off': no rotation will be tried
+			'off': detection will fail if no face can't be found with the original image orientation
 			'eco': the image will be rotated by 1/4 of turns until at least one face if found
-			'full': all four rotations be tested to detect a maximum of faces
+			'full': all four rotations will be tested to detect a maximum of faces
 
 		fine_adjust_global_rotation (string):
 			'quarter_safe': the global image will just be rotated by 1/4 of turns if it improves the face detection score
 			'safe': the global image will get fine-grained rotated if it improves the face detection score
-			'force': the global image will be rotated to align a maximum of faces, even if it decreases the new detection score
+			'force': the global image will be fine-grained rotated rotated to align a maximum of faces, even if it decreases the new detection score
 
 		force_copy (boolean): should intermediate buffer copies be stored in the FaceData object for each detected faces? This is useful for debug only.
 	"""

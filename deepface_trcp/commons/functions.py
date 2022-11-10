@@ -9,7 +9,7 @@ from PIL.Image import Resampling
 import requests
 from deepface_trcp.commons.face_data import FacesData
 
-from deepface_trcp.detectors import DlibWrapper, MtcnnWrapper, RetinaFaceWrapper,MediapipeWrapper
+from deepface_trcp.detectors import DlibWrapper, MtcnnWrapper, RetinaFaceWrapper
 from PIL import Image
 import numpy as np
 
@@ -57,11 +57,11 @@ def initialize_folder():
 
 	if not os.path.exists(home+"/.deepface"):
 		os.makedirs(home+"/.deepface")
-		print("Directory ", home, "/.deepface created")
+		#print("Directory ", home, "/.deepface created")
 
 	if not os.path.exists(home+"/.deepface/weights"):
 		os.makedirs(home+"/.deepface/weights")
-		print("Directory ", home, "/.deepface/weights created")
+		#print("Directory ", home, "/.deepface/weights created")
 
 def get_deepface_home():
 	return str(os.getenv('DEEPFACE_HOME', default=Path.home()))
@@ -107,8 +107,7 @@ def build_model(detector_backend):
 	backends = {
 		'dlib': DlibWrapper.build_model,
 		'mtcnn': MtcnnWrapper.build_model,
-		'retinaface': RetinaFaceWrapper.build_model,
-		'mediapipe': MediapipeWrapper.build_model
+		'retinaface': RetinaFaceWrapper.build_model
 	}
 
 	if not "face_detector_obj" in globals():
@@ -145,7 +144,7 @@ def angle_difference(ang1, ang2):
 		raw_diff -= 360
 	return raw_diff
 
-def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', crop_margin_ratio = 0.2):
+def detect_faces(img, detector_backend = 'dlib', align_individual_faces = True, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', crop_margin_ratio = 0.1):
 	#img might be path, base64 or numpy array. Convert it to numpy whatever it is.
 	img = load_image(img)
 	#original_img = img.copy()
@@ -157,16 +156,14 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 	backends = {
 		'dlib': DlibWrapper.detect_faces,
 		'mtcnn': MtcnnWrapper.detect_faces,
-		'retinaface': RetinaFaceWrapper.detect_faces,
-		'mediapipe': MediapipeWrapper.detect_faces
+		'retinaface': RetinaFaceWrapper.detect_faces
 	}
 
 	detect_faces = backends.get(detector_backend)
 	faces_data = detect_faces(face_detector, img, crop_margin_ratio)
 	score = np.linalg.norm([fd.confidence for fd in faces_data])
 	global_scores = [(score, 0, img, faces_data)]
-	# TODO: debug
-	print("rotate {}: score = {:.2f}".format(0, score))
+	#print("rotate {}: score = {:.2f}".format(0, score))
 	if try_global_rotations == 'eco' or try_global_rotations == 'all':
 		# try 180° first
 		for i in [2, 1, 3]:
@@ -179,8 +176,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			avg_angle = angle_mean(face_angles)
 			score = compute_score(faces_data, avg_angle)
 			global_scores.append((score, angle, rotated_img, faces_data))
-			# TODO: debug
-			print("rotate {}: score = {:.2f}".format(angle, score))
+			#print("rotate {}: score = {:.2f}".format(angle, score))
 	(score, global_angle, rotated_img, faces_data) = max(global_scores, key=lambda x: x[0])
 	face_angles = [fd.angle for fd in faces_data]
 	avg_angle = angle_mean(face_angles)
@@ -197,7 +193,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			values = [-90, 0, 90, 180]
 			idx = np.argmin([abs(angle_difference(avg_angle, v)) for v in values])
 			rot_angle = values[idx]
-		print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
+		#print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
 		if ((not too_different) or fine_adjust_global_rotation == 'force') and rot_angle != 0:
 			rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(rot_angle, resample=Resampling.BILINEAR))
 			faces_data2 = detect_faces(face_detector, rotated_img2, crop_margin_ratio)
@@ -206,7 +202,8 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			score2 = compute_score(faces_data2, avg_angle2)
 			global_angle2 = global_angle + rot_angle
 			if (score2 < score):
-				print("score didn't improve: new {:.2f} vs old {:.2f}".format(score2, score))
+				#print("score didn't improve: new {:.2f} vs old {:.2f}".format(score2, score))
+				pass
 			if (score2 >= score) or fine_adjust_global_rotation == 'force':
 				score, global_angle, rotated_img, faces_data, old_global_angle = score2, global_angle2, rotated_img2, faces_data2, global_angle
 	for fd in faces_data:
@@ -215,13 +212,6 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 		else:
 			fd.al_sub_img = fd.sub_img
 	return FacesData(detector_backend, crop_margin_ratio, img, score, global_angle, old_global_angle, rotated_img, faces_data)
-
-		# img = Image.fromarray(img)
-		# img = np.array(img.rotate())
-
-	#-----------------------
-
-	return img #return img anyway
 
 def normalize_input(img, normalization = 'base'):
 
@@ -274,7 +264,7 @@ def preprocess_face(facesdata, target_size=(224, 224), grayscale = False, copy =
 	new_faces_data = []
 	for fd in facesdata.faces_data:
 		if fd.al_sub_img.shape[0] == 0 or fd.al_sub_img.shape[1] == 0:
-			print("removing empty face rectangle")
+			# print("removing empty face rectangle")
 			continue
 		if copy:
 			fd.pp_sub_img = fd.al_sub_img.copy()

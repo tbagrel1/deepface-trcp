@@ -12,7 +12,6 @@ mtcnn>=0.1.0
 lightgbm>=2.3.1
 dlib>=19.20.0
 retina-face>=0.0.1
-mediapipe>=0.8.7.3
 fire>=0.4.0
 matplotlib>=3.5.3
 age-gender-estimation-trcp@git+https://github.com/tbagrel1/age-gender-estimation-trcp@445a24f#egg=age-gender-estimation-trcp
