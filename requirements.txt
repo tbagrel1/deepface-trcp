@@ -15,4 +15,4 @@ retina-face>=0.0.1
 mediapipe>=0.8.7.3
 fire>=0.4.0
 matplotlib>=3.5.3
-agegenderestimation@git+https://github.com/tbagrel1/age-gender-estimation@c6c23dc#egg=agegenderestimation
+age-gender-estimation-trcp@git+https://github.com/tbagrel1/age-gender-estimation-trcp@8e4505c#egg=age-gender-estimation-trcp-0.6
