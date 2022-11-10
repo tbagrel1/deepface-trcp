@@ -140,7 +140,7 @@ def angle_difference(ang1, ang2):
 		raw_diff -= 360
 	return raw_diff
 
-def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off', crop_margin_ratio = 0.2):
+def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', crop_margin_ratio = 0.2):
 	#img might be path, base64 or numpy array. Convert it to numpy whatever it is.
 	img = load_image(img)
 	#original_img = img.copy()
@@ -180,15 +180,21 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 	face_angles = [fd.angle for fd in faces_data]
 	avg_angle = angle_mean(face_angles)
 	old_global_angle = global_angle
-	if (fine_adjust_global_rotation == 'safe' or fine_adjust_global_rotation == 'force') and len(faces_data) > 0:
+	if len(faces_data) > 0:
 		too_different = False
 		for ang1 in face_angles:
 			for ang2 in face_angles:
 				if abs(angle_difference(ang1, ang2)) > MULTI_FACE_ANGLE_THRESHOLD:
 					too_different = True
+		if fine_adjust_global_rotation == "safe" or fine_adjust_global_rotation == "force":
+			rot_angle = avg_angle
+		else:
+			values = [-90, 0, 90, 180]
+			idx = np.argmin([abs(angle_difference(avg_angle, v)) for v in values])
+			rot_angle = values[idx]
 		print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
-		if (not too_different) or fine_adjust_global_rotation == 'force':
-			rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(avg_angle, resample=Resampling.BILINEAR))
+		if ((not too_different) or fine_adjust_global_rotation == 'force') and rot_angle != 0:
+			rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(rot_angle, resample=Resampling.BILINEAR))
 			faces_data2 = detect_faces(face_detector, rotated_img2, crop_margin_ratio)
 			face_angles2 = [fd.angle for fd in faces_data2]
 			avg_angle2 = angle_mean(face_angles2)

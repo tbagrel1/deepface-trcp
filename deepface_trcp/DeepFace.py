@@ -7,7 +7,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from os import path
 import numpy as np
-
+import cv2
 from deepface_trcp.extendedmodels import Age, Gender, Race, Emotion
 from deepface_trcp.commons import functions, distance as dst
 
@@ -16,6 +16,25 @@ tf_version = int(tf.__version__.split(".")[0])
 if tf_version == 2:
 	import logging
 	tf.get_logger().setLevel(logging.ERROR)
+
+# https://github.com/yu4u/age-gender-estimation
+EXTERNAL_WEIGHTS_URL = "https://github.com/yu4u/age-gender-estimation/releases/download/v0.6/EfficientNetB3_224_weights.11-3.44.hdf5"
+EXTERNAL_WEIGHTS_FILE_NAME = "EfficientNetB3_224_weights.11-3.44.hdf5"
+EXTERNAL_WEIGHTS_HASH = "6d7f7b7ced093a8b3ef6399163da6ece"
+EXTERNAL_MODEL_SIZE = None
+
+def load_external_model():
+	global EXTERNAL_MODEL_SIZE
+	from tensorflow.keras.utils import get_file
+	from pathlib import Path
+	from omegaconf import OmegaConf
+	from age_gender_estimation.src.factory import get_model
+	weights_file = get_file(EXTERNAL_WEIGHTS_FILE_NAME, EXTERNAL_WEIGHTS_URL, file_hash=EXTERNAL_WEIGHTS_HASH)
+	model_name, EXTERNAL_MODEL_SIZE = Path(weights_file).stem.split("_")[:2]
+	EXTERNAL_MODEL_SIZE = int(model_size)
+	config = OmegaConf.from_dotlist([f"model.model_name={model_name}", f"model.img_size={EXTERNAL_MODEL_SIZE}"])
+	model = get_model(config)
+	model.load_weights(weights_file)
 
 def build_model(model_name):
 
@@ -45,7 +64,8 @@ def build_model(model_name):
 		'emotion': Emotion.loadModel,
 		'age': Age.loadModel,
 		'gender': Gender.loadModel,
-		'race': Race.loadModel
+		'race': Race.loadModel,
+		'external_age_gender': load_external_model
 	}
 
 	if not "model_obj" in globals():
@@ -62,7 +82,7 @@ def build_model(model_name):
 
 	return model_obj[model_name]
 
-def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'all', fine_adjust_global_rotation = 'off', crop_margin_ratio = 0.2, force_copy = False):
+def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_age_gender'), detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', crop_margin_ratio = 0.2, force_copy = False):
 
 	"""
 	This function analyzes facial attributes including age, gender, emotion and race
@@ -70,7 +90,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 	Parameters:
 		img_path: exact image path, numpy array (BGR) or base64 encoded image could be passed.
 
-		actions (tuple): The default is ('age', 'gender', 'emotion', 'race'). You can drop some of those attributes.
+		actions (tuple): The default is ('age', 'gender', 'emotion', 'race', 'external_age_gender'). You can drop some of those attributes.
 
 		detector_backend (string): set face detector backend in ('retinaface', 'mtcnn', 'dlib', 'mediapipe').
 
@@ -78,11 +98,11 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 
 		try_global_rotations (string):
 			'off': no rotation will be tried
-			'eco': the image will be rotated until at least one face if found
-			'full': all four rotations be tested to detect a maximum of faces?
+			'eco': the image will be rotated by 1/4 of turns until at least one face if found
+			'full': all four rotations be tested to detect a maximum of faces
 
 		fine_adjust_global_rotation (string):
-			'off': the global image will just be rotated by 1/4 of turns
+			'quarter_safe': the global image will just be rotated by 1/4 of turns if it improves the face detection score
 			'safe': the global image will get fine-grained rotated if it improves the face detection score
 			'force': the global image will be rotated to align a maximum of faces, even if it decreases the new detection score
 		
@@ -135,7 +155,8 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 	if "age" in actions or "gender" in actions or "race" in actions:
 		gender_labels = ["woman", "man"]
 		race_labels = ['asian', 'indian', 'black', 'white', 'middle eastern', 'latino hispanic']
-		pp_facesdata = functions.preprocess_face(facesdata, target_size = (224, 224), grayscale = False, copy = force_copy)
+		copy_in_preprocess = "external_age_gender" in actions or force_copy
+		pp_facesdata = functions.preprocess_face(facesdata, target_size = (224, 224), grayscale = False, copy = copy_in_preprocess)
 		for fd in pp_facesdata.faces_data:
 			if "age" in actions:
 				age_predictions = models['age'].predict(fd.pp_sub_img, verbose=0)[0,:]
@@ -159,6 +180,26 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race'), detector_b
 					resp_obj[race_label] = float(race_prediction)
 				resp_obj["dominant_race"] = race_labels[np.argmax(race_predictions)]
 				fd.race = resp_obj
+	if "external_age_gender" in actions:
+		face_frames = np.empty((len(pp_facesdata.faces_data), EXTERNAL_MODEL_SIZE, EXTERNAL_MODEL_SIZE, 3))
+		for i, fd in pp_facesdata.faces_data:
+			if force_copy:
+				bgr_image = fd.al_sub_img.copy()
+			else:
+				bgr_image = fd.al_sub_img
+			pp_sub_img = cv2.resize(bgr_image, (EXTERNAL_MODEL_SIZE, EXTERNAL_MODEL_SIZE))
+			fd.pp_sub_img = pp_sub_img
+			face_frames[i] = pp_sub_img
+		results = models["external_age_gender"].predict(face_frames)
+		predicted_genders = results[0]
+		predicted_ages = results[1].dot(np.arange(0, 101).reshape(101, 1)).flatten()
+		for fd, predicted_gender, predicted_age in zip(pp_facesdata.faces_data, predicted_genders, predicted_ages):
+			fd.external = {
+				"age": float(predicted_age),
+				"gender_value": float(predicted_gender),
+				"dominant_gender": "male" if predicted_gender[0] < 0.5 else "female"
+			}
+		
 	#---------------------------------
 	return pp_facesdata
 
