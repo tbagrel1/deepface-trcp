@@ -169,7 +169,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 				break
 			angle = i * 90
 			rotated_img = np.array(Image.fromarray(img).rotate(angle))
-			faces_data = detect_faces(face_detector, rotated_img)
+			faces_data = detect_faces(face_detector, rotated_img, crop_margin_ratio)
 			face_angles = [fd.angle for fd in faces_data]
 			avg_angle = angle_mean(face_angles)
 			score = compute_score(faces_data, avg_angle)
@@ -189,7 +189,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 		print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
 		if (not too_different) or fine_adjust_global_rotation == 'force':
 			rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(avg_angle, resample=Resampling.BILINEAR))
-			faces_data2 = detect_faces(face_detector, rotated_img2)
+			faces_data2 = detect_faces(face_detector, rotated_img2, crop_margin_ratio)
 			face_angles2 = [fd.angle for fd in faces_data2]
 			avg_angle2 = angle_mean(face_angles2)
 			score2 = compute_score(faces_data2, avg_angle2)
