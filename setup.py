@@ -8,14 +8,14 @@ with open("requirements.txt", "r", encoding="utf-8") as req_file:
 
 setuptools.setup(
     name="deepface-trcp",
-    version="0.0.110",
+    version="0.0.111",
     author="Sefik Ilkin Serengil, Thomas Bagrel",
     author_email="serengil@gmail.com",
     description="A Lightweight Face Recognition and Facial Attribute Analysis Framework (Age, Gender, Emotion, Race) for Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/tbagrel1/deepface-trcp",
-    packages=["deepface_trcp"],
+    packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
