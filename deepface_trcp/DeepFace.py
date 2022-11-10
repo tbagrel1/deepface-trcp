@@ -28,7 +28,7 @@ def load_external_model():
 	from tensorflow.keras.utils import get_file
 	from pathlib import Path
 	from omegaconf import OmegaConf
-	from age_gender_estimation.src.factory import get_model
+	from agegenderestimation.src.factory import get_model
 	weights_file = get_file(EXTERNAL_WEIGHTS_FILE_NAME, EXTERNAL_WEIGHTS_URL, file_hash=EXTERNAL_WEIGHTS_HASH)
 	model_name, EXTERNAL_MODEL_SIZE = Path(weights_file).stem.split("_")[:2]
 	EXTERNAL_MODEL_SIZE = int(model_size)
