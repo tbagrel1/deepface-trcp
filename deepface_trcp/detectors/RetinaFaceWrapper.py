@@ -42,6 +42,8 @@ def detect_faces(face_detector, img, crop_margin_ratio):
             y2 = facial_area[3]
             x = facial_area[0]
             x2 = facial_area[2]
+            w = x2 - x
+            h = y2 - y
             confidence = identity["score"]
             crop_margin = round(max(w, h) * crop_margin_ratio)
             x = max(0, x - crop_margin)
