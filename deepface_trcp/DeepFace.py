@@ -83,7 +83,7 @@ def build_model(model_name):
 
 	return model_obj[model_name]
 
-def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_age_gender'), detector_backend = 'dlib', align_individual_faces = False, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', crop_margin_ratio = 0.2, force_copy = False):
+def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_age_gender'), detector_backends = (('dlib', 0.1), ('retinaface', 0.1)), align_individual_faces = False, try_global_rotations = 'eco', fine_adjust_global_rotation = 'quarter_safe', force_copy = False):
 
 	"""
 	This function analyzes facial attributes including age, gender, emotion and race
@@ -93,7 +93,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 
 		actions (tuple): The default is ('age', 'gender', 'emotion', 'race', 'external_age_gender'). You can drop some of those attributes.
 
-		detector_backend (string): set face detector backend in ('retinaface', 'mtcnn', 'dlib', 'mediapipe').
+		detector_backends (list of tuples): list of (backend, crop_margin_ratio) that should be tried in order until a face is found. backend in a value in ['retinaface', 'mtcnn', 'dlib', 'mediapipe'] and crop_margin_ratio is a value in [-1..1] corresponding to the added or reduced margin around each face box.
 
 		align_individual_faces (boolean): should every face be aligned on its own before executing actions?
 
@@ -106,9 +106,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 			'quarter_safe': the global image will just be rotated by 1/4 of turns if it improves the face detection score
 			'safe': the global image will get fine-grained rotated if it improves the face detection score
 			'force': the global image will be rotated to align a maximum of faces, even if it decreases the new detection score
-		
-		crop_margin_ratio (float): value in [-1..1] corresponding to the added or reduced margin around each face box
-		
+
 		force_copy (boolean): should intermediate buffer copies be stored in the FaceData object for each detected faces? This is useful for debug only.
 	"""
 
@@ -139,92 +137,98 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 
 	#---------------------------------
 
-	facesdata = functions.detect_faces(img_path, detector_backend, align_individual_faces, try_global_rotations, fine_adjust_global_rotation, crop_margin_ratio)
-	pp_facesdata = facesdata # for the case with actions = []
-	copy_in_preprocess = ("emotion" in actions and len(actions) > 1) or force_copy
-	if "emotion" in actions:
-		emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
-		copy_in_preprocess = len(actions) > 1
-		pp_facesdata = functions.preprocess_face(facesdata, target_size = (48, 48), grayscale = True, copy = copy_in_preprocess)
-		for fd in pp_facesdata.faces_data:
-			emotion_predictions = models['emotion'].predict(fd.pp_sub_img, verbose=0)[0,:]
-			sum_of_predictions = emotion_predictions.sum()
-			resp_obj = {}
-			for i in range(0, len(emotion_labels)):
-				emotion_label = emotion_labels[i]
-				emotion_prediction = 100 * emotion_predictions[i] / sum_of_predictions
-				resp_obj[emotion_label] = float(emotion_prediction)
-			resp_obj["dominant_emotion"] = emotion_labels[np.argmax(emotion_predictions)]
-			fd.emotion = resp_obj
-	if "age" in actions or "gender" in actions or "race" in actions:
-		gender_labels = ["woman", "man"]
-		race_labels = ['asian', 'indian', 'black', 'white', 'middle eastern', 'latino hispanic']
-		copy_in_preprocess = "external_age_gender" in actions or force_copy
-		pp_facesdata = functions.preprocess_face(facesdata, target_size = (224, 224), grayscale = False, copy = copy_in_preprocess)
-		for fd in pp_facesdata.faces_data:
-			if "age" in actions:
-				age_predictions = models['age'].predict(fd.pp_sub_img, verbose=0)[0,:]
-				apparent_age = Age.findApparentAge(age_predictions)
+	for backend, _ in detector_backends:
+		functions.build_model(backend)
+	
+	for detector_backend, crop_margin_ratio in detector_backends:
+		facesdata = functions.detect_faces(img_path, detector_backend, align_individual_faces, try_global_rotations, fine_adjust_global_rotation, crop_margin_ratio)
+		pp_facesdata = facesdata # for the case with actions = []
+		copy_in_preprocess = ("emotion" in actions and len(actions) > 1) or force_copy
+		if "emotion" in actions:
+			emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
+			copy_in_preprocess = len(actions) > 1
+			pp_facesdata = functions.preprocess_face(facesdata, target_size = (48, 48), grayscale = True, copy = copy_in_preprocess)
+			for fd in pp_facesdata.faces_data:
+				emotion_predictions = models['emotion'].predict(fd.pp_sub_img, verbose=0)[0,:]
+				sum_of_predictions = emotion_predictions.sum()
+				resp_obj = {}
+				for i in range(0, len(emotion_labels)):
+					emotion_label = emotion_labels[i]
+					emotion_prediction = 100 * emotion_predictions[i] / sum_of_predictions
+					resp_obj[emotion_label] = float(emotion_prediction)
+				resp_obj["dominant_emotion"] = emotion_labels[np.argmax(emotion_predictions)]
+				fd.emotion = resp_obj
+		if "age" in actions or "gender" in actions or "race" in actions:
+			# gender_labels = ["woman", "man"]
+			race_labels = ['asian', 'indian', 'black', 'white', 'middle eastern', 'latino hispanic']
+			copy_in_preprocess = "external_age_gender" in actions or force_copy
+			pp_facesdata = functions.preprocess_face(facesdata, target_size = (224, 224), grayscale = False, copy = copy_in_preprocess)
+			for fd in pp_facesdata.faces_data:
+				if "age" in actions:
+					age_predictions = models['age'].predict(fd.pp_sub_img, verbose=0)[0,:]
+					apparent_age = Age.findApparentAge(age_predictions)
+					if fd.age is None:
+						fd.age = {}
+					fd.age["deepface"] = float(apparent_age)
+				if "gender" in actions:
+					gender_predictions = models['gender'].predict(fd.pp_sub_img, verbose=0)[0,:]
+					if fd.gender is None:
+						fd.gender = {}
+					fd.gender["deepface"] = float(gender_predictions[0])
+				if "race" in actions:
+					race_predictions = models['race'].predict(fd.pp_sub_img, verbose=0)[0,:]
+					sum_of_predictions = race_predictions.sum()
+					resp_obj = {}
+					for i in range(0, len(race_labels)):
+						race_label = race_labels[i]
+						race_prediction = 100 * race_predictions[i] / sum_of_predictions
+						resp_obj[race_label] = float(race_prediction)
+					resp_obj["dominant_race"] = race_labels[np.argmax(race_predictions)]
+					fd.race = resp_obj
+		if "external_age_gender" in actions and len(pp_facesdata.faces_data) > 0:
+			face_frames = np.empty((len(pp_facesdata.faces_data), EXTERNAL_MODEL_SIZE, EXTERNAL_MODEL_SIZE, 3))
+			for i, fd in enumerate(pp_facesdata.faces_data):
+				if force_copy:
+					bgr_image = fd.al_sub_img.copy()
+				else:
+					bgr_image = fd.al_sub_img
+				pp_sub_img = cv2.resize(bgr_image, (EXTERNAL_MODEL_SIZE, EXTERNAL_MODEL_SIZE))
+				fd.pp_sub_img = pp_sub_img
+				face_frames[i] = pp_sub_img
+			results = models["external_age_gender"].predict(face_frames)
+			predicted_genders = results[0]
+			predicted_ages = results[1].dot(np.arange(0, 101).reshape(101, 1)).flatten()
+			for fd, predicted_gender, predicted_age in zip(pp_facesdata.faces_data, predicted_genders, predicted_ages):
 				if fd.age is None:
 					fd.age = {}
-				fd.age["deepface"] = float(apparent_age)
-			if "gender" in actions:
-				gender_predictions = models['gender'].predict(fd.pp_sub_img, verbose=0)[0,:]
+				fd.age["external"] = float(predicted_age)
 				if fd.gender is None:
 					fd.gender = {}
-				fd.gender["deepface"] = float(gender_predictions[0])
-			if "race" in actions:
-				race_predictions = models['race'].predict(fd.pp_sub_img, verbose=0)[0,:]
-				sum_of_predictions = race_predictions.sum()
-				resp_obj = {}
-				for i in range(0, len(race_labels)):
-					race_label = race_labels[i]
-					race_prediction = 100 * race_predictions[i] / sum_of_predictions
-					resp_obj[race_label] = float(race_prediction)
-				resp_obj["dominant_race"] = race_labels[np.argmax(race_predictions)]
-				fd.race = resp_obj
-	if "external_age_gender" in actions and len(pp_facesdata.faces_data) > 0:
-		face_frames = np.empty((len(pp_facesdata.faces_data), EXTERNAL_MODEL_SIZE, EXTERNAL_MODEL_SIZE, 3))
-		for i, fd in enumerate(pp_facesdata.faces_data):
-			if force_copy:
-				bgr_image = fd.al_sub_img.copy()
-			else:
-				bgr_image = fd.al_sub_img
-			pp_sub_img = cv2.resize(bgr_image, (EXTERNAL_MODEL_SIZE, EXTERNAL_MODEL_SIZE))
-			fd.pp_sub_img = pp_sub_img
-			face_frames[i] = pp_sub_img
-		results = models["external_age_gender"].predict(face_frames)
-		predicted_genders = results[0]
-		predicted_ages = results[1].dot(np.arange(0, 101).reshape(101, 1)).flatten()
-		for fd, predicted_gender, predicted_age in zip(pp_facesdata.faces_data, predicted_genders, predicted_ages):
-			if fd.age is None:
-				fd.age = {}
-			fd.age["external"] = float(predicted_age)
-			if fd.gender is None:
-				fd.gender = {}
-			fd.gender["external"] = float(gender_predictions[0])
-		
-	#---------------------------------
-	for fd in pp_facesdata.faces_data:
-		if "external_age_gender" in actions and "age" in actions:
-			fd.age["dominant_age"] = np.mean([fd.age["deepface"], fd.age["external"]])
-		elif "external_age_gender" in actions:
-			fd.age["dominant_age"] = fd.age["external"]
-		elif "age" in actions:
-			fd.age["dominant_age"] = fd.age["deepface"]
-		
-		if "external_age_gender" in actions and "gender" in actions:
-			if fd.gender["deepface"] < 0.5 and fd.gender["external"] < 0.5:
-				fd.gender["dominant_gender"] = "male"
-			elif fd.gender["deepface"] >= 0.5 and fd.gender["external"] >= 0.5:
-				fd.gender["dominant_gender"] = "female"
-			else:
-				fd.gender["dominant_gender"] = "unknown"
-		elif "external_age_gender" in actions:
-			fd.gender["dominant_gender"] = "male" if fd.gender["external"] < 0.5 else "female"
-		elif "gender" in actions:
-			fd.gender["dominant_gender"] = "male" if fd.gender["deepface"] < 0.5 else "female"
+				fd.gender["external"] = float(predicted_gender[0])
+			
+		#---------------------------------
+		for fd in pp_facesdata.faces_data:
+			if "external_age_gender" in actions and "age" in actions:
+				fd.age["dominant_age"] = np.mean([fd.age["deepface"], fd.age["external"]])
+			elif "external_age_gender" in actions:
+				fd.age["dominant_age"] = fd.age["external"]
+			elif "age" in actions:
+				fd.age["dominant_age"] = fd.age["deepface"]
+			
+			if "external_age_gender" in actions and "gender" in actions:
+				if fd.gender["deepface"] < 0.5 and fd.gender["external"] < 0.5:
+					fd.gender["dominant_gender"] = "male"
+				elif fd.gender["deepface"] >= 0.5 and fd.gender["external"] >= 0.5:
+					fd.gender["dominant_gender"] = "female"
+				else:
+					fd.gender["dominant_gender"] = "unknown"
+			elif "external_age_gender" in actions:
+				fd.gender["dominant_gender"] = "male" if fd.gender["external"] < 0.5 else "female"
+			elif "gender" in actions:
+				fd.gender["dominant_gender"] = "male" if fd.gender["deepface"] < 0.5 else "female"
 
+		if len(pp_facesdata.faces_data) > 0:
+			break
 	return pp_facesdata
 
 

@@ -209,7 +209,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = False,
 			fd.al_sub_img = np.array(Image.fromarray(fd.sub_img).rotate(fd.angle, resample=Resampling.BILINEAR))
 		else:
 			fd.al_sub_img = fd.sub_img
-	return FacesData(img, score, global_angle, old_global_angle, rotated_img, faces_data)
+	return FacesData(detector_backend, crop_margin_ratio, img, score, global_angle, old_global_angle, rotated_img, faces_data)
 
 		# img = Image.fromarray(img)
 		# img = np.array(img.rotate())

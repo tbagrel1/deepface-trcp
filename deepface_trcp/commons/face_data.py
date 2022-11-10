@@ -86,7 +86,9 @@ class FaceData:
         }
 
 class FacesData:
-    def __init__(self, original_img, global_score, global_angle, original_global_angle, rotated_img, faces_data):
+    def __init__(self, backend, crop_margin_ratio, original_img, global_score, global_angle, original_global_angle, rotated_img, faces_data):
+        self.backend = backend
+        self.crop_margin_ratio = crop_margin_ratio
         self.original_img = original_img
         self.global_score = global_score
         self.global_angle = global_angle
@@ -95,6 +97,8 @@ class FacesData:
         self.faces_data = faces_data
     def as_dict(self):
         return {
+            "backend": self.backend,
+            "crop_margin_ratio": float(self.crop_margin_ratio),
             "score": float(self.global_score),
             "total_rotation": float(self.global_angle),
             "initial_rotation": float(self.original_global_angle),
