@@ -103,6 +103,7 @@ def analyze(img_path, actions = ('emotion', 'age', 'gender', 'race', 'external_a
 			'full': all four rotations will be tested to detect a maximum of faces
 
 		fine_adjust_global_rotation (string):
+			'off': the global image won't be rotated after face detection even if faces are upside-down
 			'quarter_safe': the global image will just be rotated by 1/4 of turns if it improves the face detection score
 			'safe': the global image will get fine-grained rotated if it improves the face detection score
 			'force': the global image will be fine-grained rotated rotated to align a maximum of faces, even if it decreases the new detection score

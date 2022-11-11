@@ -189,6 +189,8 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = True, 
 					too_different = True
 		if fine_adjust_global_rotation == "safe" or fine_adjust_global_rotation == "force":
 			rot_angle = avg_angle
+		elif fine_adjust_global_rotation == "off":
+			rot_angle = 0
 		else:
 			values = [-90, 0, 90, 180]
 			idx = np.argmin([abs(angle_difference(avg_angle, v)) for v in values])
