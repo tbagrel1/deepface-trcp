@@ -65,10 +65,10 @@ class FaceData:
         mouth_left = {"x": int(self.mouth_left[0]), "y": int(self.mouth_left[1])} if self.mouth_left is not None else None
         mouth_right = {"x": int(self.mouth_right[0]), "y": int(self.mouth_right[1])} if self.mouth_right is not None else None
         return {
-            "x": int(self.x),
-            "y": int(self.y),
-            "w": int(self.w),
-            "h": int(self.h),
+            "top_left_corner_x": int(self.x),
+            "top_left_corner_y": int(self.y),
+            "width": int(self.w),
+            "height": int(self.h),
             "confidence": float(self.confidence),
             "face_landmarks": {
                 "left_eye": {"x": int(self.left_eye[0]), "y": int(self.left_eye[1])},
