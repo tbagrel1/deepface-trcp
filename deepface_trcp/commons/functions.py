@@ -8,6 +8,7 @@ from PIL import Image
 from PIL.Image import Resampling
 import requests
 from deepface_trcp.commons.face_data import FacesData
+import matplotlib.pyplot as plt # TODO:remove
 
 from deepface_trcp.detectors import DlibWrapper, MtcnnWrapper, RetinaFaceWrapper
 from PIL import Image
@@ -171,6 +172,11 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = True, 
 				break
 			angle = i * 90
 			rotated_img = np.array(Image.fromarray(img).rotate(angle))
+			#TODO:{
+			fig, ax = plt.subplots()
+			ax.imshow(rotated_img)
+			plt.show()
+			#TODO:}
 			faces_data = detect_faces(face_detector, rotated_img, crop_margin_ratio)
 			face_angles = [fd.angle for fd in faces_data]
 			avg_angle = angle_mean(face_angles)
