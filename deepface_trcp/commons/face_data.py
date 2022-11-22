@@ -108,10 +108,9 @@ class FacesData:
     def draw(self):
         # Create figure and axes
         fig, ax = plt.subplots()
-        rotated_img = np.array(Image.fromarray(self.original_img).rotate(self.original_global_angle))
-        rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(self.global_angle - self.original_global_angle, resample=Resampling.BILINEAR))
+        rotated_img = np.array(Image.fromarray(self.original_img).rotate(self.global_angle, expand=True, resample=Resampling.BILINEAR))
         # Display the image
-        ax.imshow(rotated_img2)
+        ax.imshow(rotated_img)
         for fd in self.faces_data:
             rect = patches.Rectangle((fd.x, fd.y), fd.w, fd.h, linewidth=1, edgecolor='r', facecolor='none')
             left_eye = patches.Circle(fd.left_eye, 2, linewidth=1, edgecolor='g', facecolor='none')

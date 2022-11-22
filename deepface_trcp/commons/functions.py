@@ -8,7 +8,6 @@ from PIL import Image
 from PIL.Image import Resampling
 import requests
 from deepface_trcp.commons.face_data import FacesData
-import matplotlib.pyplot as plt # TODO:remove
 
 from deepface_trcp.detectors import DlibWrapper, MtcnnWrapper, RetinaFaceWrapper
 from PIL import Image
@@ -171,12 +170,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = True, 
 			if score > 0 and try_global_rotations == 'eco':
 				break
 			angle = i * 90
-			rotated_img = np.array(Image.fromarray(img).rotate(angle))
-			#TODO:{
-			fig, ax = plt.subplots()
-			ax.imshow(rotated_img)
-			plt.show()
-			#TODO:}
+			rotated_img = np.array(Image.fromarray(img).rotate(angle, expand=True))
 			faces_data = detect_faces(face_detector, rotated_img, crop_margin_ratio)
 			face_angles = [fd.angle for fd in faces_data]
 			avg_angle = angle_mean(face_angles)
@@ -203,7 +197,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = True, 
 			rot_angle = values[idx]
 		#print("angles = {} ; avg angle = {:.2f} ; too_different = {}".format(face_angles, avg_angle, too_different))
 		if ((not too_different) or fine_adjust_global_rotation == 'force') and rot_angle != 0:
-			rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(rot_angle, resample=Resampling.BILINEAR))
+			rotated_img2 = np.array(Image.fromarray(rotated_img).rotate(rot_angle, expand=True, resample=Resampling.BILINEAR))
 			faces_data2 = detect_faces(face_detector, rotated_img2, crop_margin_ratio)
 			face_angles2 = [fd.angle for fd in faces_data2]
 			avg_angle2 = angle_mean(face_angles2)
@@ -216,7 +210,7 @@ def detect_faces(img, detector_backend = 'dlib', align_individual_faces = True, 
 				score, global_angle, rotated_img, faces_data, old_global_angle = score2, global_angle2, rotated_img2, faces_data2, global_angle
 	for fd in faces_data:
 		if align_individual_faces:
-			fd.al_sub_img = np.array(Image.fromarray(fd.sub_img).rotate(fd.angle, resample=Resampling.BILINEAR))
+			fd.al_sub_img = np.array(Image.fromarray(fd.sub_img).rotate(fd.angle, expand=True, resample=Resampling.BILINEAR))
 		else:
 			fd.al_sub_img = fd.sub_img
 	return FacesData(detector_backend, crop_margin_ratio, img, score, global_angle, old_global_angle, rotated_img, faces_data)
